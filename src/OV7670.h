@@ -48,14 +48,14 @@ class OV7670: public I2SCamera
   static const int REG_AECH = 0x10;
   static const int REG_CLKRC = 0x11;
   static const int REG_COM7 = 0x12;
-    static const int COM7_RGB = 0x04;
+  static const int COM7_RGB = 0x04;
   static const int REG_COM8 = 0x13;
-    static const int COM8_FASTAEC = 0x80;    // Enable fast AGC/AEC
-    static const int COM8_AECSTEP = 0x40;    // Unlimited AEC step size
-    static const int COM8_BFILT = 0x20;    // Band filter enable
-    static const int COM8_AGC = 0x04;    // Auto gain enable
-    static const int COM8_AWB = 0x02;    // White balance enable
-    static const int COM8_AEC = 0x0;
+  static const int COM8_FASTAEC = 0x80;    // Enable fast AGC/AEC
+  static const int COM8_AECSTEP = 0x40;    // Unlimited AEC step size
+  static const int COM8_BFILT = 0x20;    // Band filter enable
+  static const int COM8_AGC = 0x04;    // Auto gain enable
+  static const int COM8_AWB = 0x02;    // White balance enable
+  static const int COM8_AEC = 0x0;
   static const int REG_COM9 = 0x14;
   static const int REG_COM10 = 0x15;
   static const int REG_COM14 = 0x3E;
@@ -68,8 +68,8 @@ class OV7670: public I2SCamera
   static const int REG_TSLB = 0x3A;
   static const int REG_RGB444 = 0x8C;
   static const int REG_COM15 = 0x40;
-    static const int COM15_RGB565 = 0x10;
-    static const int COM15_R00FF = 0xc0;
+  static const int COM15_RGB565 = 0x10;
+  static const int COM15_R00FF = 0xc0;
   static const int REG_HSTART = 0x17;
   static const int REG_HSTOP = 0x18;
   static const int REG_HREF = 0x32;
@@ -78,7 +78,7 @@ class OV7670: public I2SCamera
   static const int REG_COM3 = 0x0C;
   static const int REG_MVFP = 0x1E;
   static const int REG_COM13 = 0x3d;
-    static const int COM13_UVSAT = 0x40;
+  static const int COM13_UVSAT = 0x40;
   static const int REG_SCALING_XSC = 0x70;
   static const int REG_SCALING_YSC = 0x71;    
   static const int REG_SCALING_DCWCTR = 0x72;
@@ -103,6 +103,5 @@ class OV7670: public I2SCamera
   static const int REG_EDGE = 0x3f;
   static const int REG_REG76 = 0x76;
   static const int ADCCTR0 = 0x20;
-
 };
 

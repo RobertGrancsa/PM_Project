@@ -42,7 +42,16 @@ const int HREF = 35;
 const int XCLK = 16;
 const int PCLK = 4;
 
-#define ROTATION 0
+#define ROTATION 3
+// Screen dimensions
+#define SCREEN_WIDTH  160
+#define SCREEN_HEIGHT 128
+
+#define RADIUS 40
+
+// Center of the speedometer
+#define CENTER_X (SCREEN_WIDTH / 2)
+#define CENTER_Y (SCREEN_HEIGHT / 2)
 
 WiFiMulti wifiMulti;
 WiFiServer server(80);
@@ -82,12 +91,12 @@ void serve()
         }
         
         if (currentLine.endsWith("GET /camera")) {
-            client.println("HTTP/1.1 200 OK");
-            client.println("Content-type:image/bmp");
-            client.println();
-            
-            client.write(bmpHeader, BMP::headerSize);
-            client.write(camera->frame, camera->xres * camera->yres * 2);
+          client.println("HTTP/1.1 200 OK");
+          client.println("Content-type:image/bmp");
+          client.println();
+          
+          client.write(bmpHeader, BMP::headerSize);
+          client.write(camera->frame, camera->xres * camera->yres * 2);
         }
       }
     }
@@ -95,6 +104,23 @@ void serve()
     client.stop();
     Serial.println("Client Disconnected.");
   }  
+}
+
+void drawSpeedometer() {
+  tft.fillScreen(ST7735_BLACK);
+  tft.drawCircle(CENTER_X, CENTER_Y, RADIUS, ST7735_WHITE);
+  
+  for (int angle = -180; angle <= 0; angle += 10) {
+    float radian = angle * DEG_TO_RAD;
+    int x0 = CENTER_X + cos(radian) * (RADIUS - 10);
+    int y0 = CENTER_Y + sin(radian) * (RADIUS - 10);
+    int x1 = CENTER_X + cos(radian) * RADIUS;
+    int y1 = CENTER_Y + sin(radian) * RADIUS;
+    tft.drawLine(x0, y0, x1, y1, ST7735_WHITE);
+  }
+
+  tft.setCursor(CENTER_X - 10, CENTER_Y + 15);
+  tft.print("km/h");
 }
 
 void setup()
@@ -116,9 +142,14 @@ void setup()
   Serial.println("Created camera");
 
   tft.initR(INITR_BLACKTAB);
+  tft.setRotation(3);
   tft.fillScreen(0);
+  Serial.print(tft.width());
+  Serial.print(" x ");
+  Serial.println(tft.height());
   server.begin();
   Serial.println("Started server");
+  drawSpeedometer();
 }
 
 void displayY8(unsigned char * frame, int xres, int yres)
@@ -148,9 +179,58 @@ void displayRGB565(unsigned char * frame, int xres, int yres)
     }
 }
 
+void drawCursor(int speed) {
+  static int lastX = CENTER_X;
+  static int lastY = CENTER_Y;
+
+  // Erase the previous cursor
+  tft.drawLine(CENTER_X, CENTER_Y, lastX, lastY, ST7735_BLACK);
+
+  // Calculate the new cursor position
+  float angle = map(speed, 0, 100, -180, 180);
+  float radian = angle * DEG_TO_RAD;
+  int x = CENTER_X + cos(radian) * (RADIUS - 20);
+  int y = CENTER_Y + sin(radian) * (RADIUS - 20);
+
+  // Draw the new cursor
+  tft.drawLine(CENTER_X, CENTER_Y, x, y, ST7735_RED);
+
+  // Update last cursor position
+  lastX = x;
+  lastY = y;
+}
+
+void drawSpeed(int speed) {
+  static int lastSpeed = 0;
+
+  tft.setCursor(CENTER_X - 5, CENTER_Y + 5);
+  tft.setTextColor(ST7735_BLACK);
+  tft.print(lastSpeed);
+
+  tft.setCursor(CENTER_X - 5, CENTER_Y + 5);
+  tft.setTextColor(ST7735_WHITE);
+  tft.print(speed);
+
+  lastSpeed = speed;
+}
+
+static int counter;
+
 void loop()
 {
-  camera->oneFrame();
-  serve();
-  displayRGB565(camera->frame, camera->xres, camera->yres);
+  // camera->oneFrame();
+  // serve();
+  // displayRGB565(camera->frame, camera->xres, camera->yres);
+
+  // tft.fillScreen(0);
+  // tft.drawCircle(tft.width() / 2, tft.height() / 2, 40, 0x001F);
+  // tft.drawLine(tft.width() / 2, tft.height() / 2, , , 0xFFFF);
+  // tft.setCursor(tft.width() / 2, tft.height() / 2);
+  // tft.println(counter++);
+  // tft.setCursor(tft.width() / 2, tft.height() / 2 + 10);
+  // tft.println("km/h");
+  drawCursor(counter++);
+  drawSpeed(counter);
+  // sleep(1);
+  usleep(500 * 1000);
 }

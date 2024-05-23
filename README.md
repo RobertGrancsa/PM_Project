@@ -30,11 +30,19 @@ Schema proiectului este compusă dintr-un microcontroller ESP32, care conecteaz�
 
 ## Hardware Design
 
-Aici puneți tot ce ține de hardware design:
-- listă de piese
-- scheme electrice (se pot lua și de pe Internet și din datasheet-uri, e.g. [link](http://www.captain.at/electronic-atmega16-mmc-schematic.png))
-- diagrame de semnal
-- rezultatele simulării
+Schematicul produsul se poate vedea mai jos. Am incercat sa conectez pinii spefici SPI pe pinii specifici de SPI, pentru GPS m-am folosit de pinii de UART si pentru camera am ales sa folosesc pinii cei mai apropiati unul de altul pentru date, ca sa nu fie overlap la conectarea firelor.
+
+![Schematicul](assets/Schematic.png)
+
+Tabelul cu piesele folosite se poate vedea mai jos.
+
+| Nume Piesa         	| Model         	| Protocol 	|
+|--------------------	|---------------	|----------	|
+| Microcontroller    	| ESP32-WROOM32 	| -        	|
+| Display            	| ST7735        	| SPI      	|
+| Camera             	| OV7670        	| I2S      	|
+| GPS                	| GY-GPS6MV2    	| UART     	|
+| Hall Effect Sensor 	| YS-27         	| ADC      	|
 
 ## Software Design
 

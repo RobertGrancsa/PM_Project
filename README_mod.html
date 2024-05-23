@@ -843,7 +843,7 @@
       <!-- The content below will be included at the end of the <head> element. -->
       <script type="text/javascript">
             document.addEventListener("DOMContentLoaded", function () {
-                  alert("Bine ai venit, sper sa iti placa");
+                  alert("Ai ales proiectul bun din lista, bine ai venit la Bike Infotainment System");
             });
       </script>
 </head>
@@ -894,14 +894,47 @@
             </ol>
             <p><img src="https://i.imgur.com/X5e3Lpz.png" alt="Diagrama proiectului"></p>
             <h2 style="font-family:Raleway; font-weight: 600;" id="hardware-design">Hardware Design </h2>
-            <p>Aici puneți tot ce ține de hardware design:</p>
-            <ul>
-                  <li>listă de piese</li>
-                  <li>scheme electrice (se pot lua și de pe Internet și din datasheet-uri, e.g. <a
-                              href="http://www.captain.at/electronic-atmega16-mmc-schematic.png">link</a>)</li>
-                  <li>diagrame de semnal</li>
-                  <li>rezultatele simulării</li>
-            </ul>
+            <p style="font-family:Roboto">Schematicul produsul se poate vedea mai jos. Am incercat sa conectez pinii spefici SPI pe pinii specifici
+                  de SPI, pentru GPS m-am folosit de pinii de UART si pentru camera am ales sa folosesc pinii cei mai
+                  apropiati unul de altul pentru date, ca sa nu fie overlap la conectarea firelor.</p>
+            <p><img src="assets/Schematic.png" alt="Schematicul"></p>
+            <p style="font-family:Roboto">Tabelul cu piesele folosite se poate vedea mai jos.</p>
+            <table>
+                  <thead>
+                        <tr>
+                              <th>Nume Piesa</th>
+                              <th>Model</th>
+                              <th>Protocol</th>
+                        </tr>
+                  </thead>
+                  <tbody>
+                        <tr>
+                              <td>Microcontroller</td>
+                              <td>ESP32-WROOM32</td>
+                              <td>-</td>
+                        </tr>
+                        <tr>
+                              <td>Display</td>
+                              <td>ST7735</td>
+                              <td>SPI</td>
+                        </tr>
+                        <tr>
+                              <td>Camera</td>
+                              <td>OV7670</td>
+                              <td>I2S</td>
+                        </tr>
+                        <tr>
+                              <td>GPS</td>
+                              <td>GY-GPS6MV2</td>
+                              <td>UART</td>
+                        </tr>
+                        <tr>
+                              <td>Hall Effect Sensor</td>
+                              <td>YS-27</td>
+                              <td>ADC</td>
+                        </tr>
+                  </tbody>
+            </table>
             <h2 style="font-family:Raleway; font-weight: 600;" id="software-design">Software Design </h2>
             <p>Descrierea codului aplicației (firmware):</p>
             <ul>
