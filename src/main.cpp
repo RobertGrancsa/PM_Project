@@ -9,10 +9,13 @@
 #include <SPI.h>
 
 #include "OV7670.h"
+#include "speedometer.h"
+#include "data_send.h"
 
 #include <WiFi.h>
 #include <WiFiMulti.h>
 #include <WiFiClient.h>
+#include <Ticker.h>
 #include "BMP.h"
 
 const char* ssid = "GRTenda-24";
@@ -42,16 +45,10 @@ const int HREF = 35;
 const int XCLK = 16;
 const int PCLK = 4;
 
+const int HALL = 39;
+const int BTN = 15;
+
 #define ROTATION 3
-// Screen dimensions
-#define SCREEN_WIDTH  160
-#define SCREEN_HEIGHT 128
-
-#define RADIUS 40
-
-// Center of the speedometer
-#define CENTER_X (SCREEN_WIDTH / 2)
-#define CENTER_Y (SCREEN_HEIGHT / 2)
 
 WiFiMulti wifiMulti;
 WiFiServer server(80);
@@ -106,26 +103,84 @@ void serve()
   }  
 }
 
-void drawSpeedometer() {
-  tft.fillScreen(ST7735_BLACK);
-  tft.drawCircle(CENTER_X, CENTER_Y, RADIUS, ST7735_WHITE);
-  
-  for (int angle = -180; angle <= 0; angle += 10) {
-    float radian = angle * DEG_TO_RAD;
-    int x0 = CENTER_X + cos(radian) * (RADIUS - 10);
-    int y0 = CENTER_Y + sin(radian) * (RADIUS - 10);
-    int x1 = CENTER_X + cos(radian) * RADIUS;
-    int y1 = CENTER_Y + sin(radian) * RADIUS;
-    tft.drawLine(x0, y0, x1, y1, ST7735_WHITE);
-  }
+Ticker timer_update;
+Ticker timer_upload;
+// Timer handles
+hw_timer_t* timer1 = NULL;
+hw_timer_t* timer2 = NULL;
 
-  tft.setCursor(CENTER_X - 10, CENTER_Y + 15);
-  tft.print("km/h");
+TaskHandle_t timer_upload_task;
+TaskHandle_t timer_update_task;
+
+
+// Variables to store time and speed
+volatile unsigned long lastInterruptTime = 0;
+volatile unsigned long currentInterruptTime = 0;
+volatile float wheelSpeed = 0.0;
+volatile float totalDistance = 0.0;
+volatile unsigned long interruptCount = 0;
+
+// Wheel diameter in meters (example: 0.7 meters for a typical bike wheel)
+const float wheelDiameter = 0.7;
+const float wheelCircumference = PI * wheelDiameter;
+
+void attach_timer(void *parameter) {
+  Serial.print("Creating send task on ");
+  Serial.println(xPortGetCoreID());
+  for (;;) {
+    // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    send_data();
+    Serial.println("Task1: Executing on core 0");
+    vTaskDelay(30000);
+  }
 }
+
+// ISR for Hall effect sensor
+void IRAM_ATTR onHallEffect() {
+  Serial.println("Found signal change");
+  currentInterruptTime = micros();
+  unsigned long timeDiff = currentInterruptTime - lastInterruptTime;
+
+  wheelSpeed = wheelCircumference / (timeDiff / 1000000.0);
+
+  // Update total distance traveled
+  totalDistance += wheelCircumference;
+
+  // Update the interrupt count
+  interruptCount++;
+
+  lastInterruptTime = currentInterruptTime;
+  updateTimerScreen(wheelSpeed);
+}
+
+
+void update_timer(void *parameter) {
+  Serial.print("Creating update task on ");
+  Serial.println(xPortGetCoreID());
+  // timer_update.attach(0.5f, updateTimerScreen);
+
+  bool found = false;
+  for (;;) {
+    // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    // Serial.println("Task2: Executing on core 1");
+    uint16_t speed = analogRead(HALL);
+
+    if (!found && speed == 0) {
+      onHallEffect();
+      found = true;
+    } else if (speed == 4095) {
+      found = false;
+    }
+  }
+}
+
+
 
 void setup()
 {
   Serial.begin(115200);
+  Serial.print("Started on core ");
+  Serial.println(xPortGetCoreID());
 
   wifiMulti.addAP(ssid, password);
   //wifiMulti.addAP(ssid2, password2);
@@ -150,6 +205,32 @@ void setup()
   server.begin();
   Serial.println("Started server");
   drawSpeedometer();
+
+  BaseType_t ret = xTaskCreatePinnedToCore(
+      attach_timer, /* Function to implement the task */
+      "timer_send_data", /* Name of the task */
+      10000,  /* Stack size in words */
+      NULL,  /* Task input parameter */
+      1,  /* Priority of the task */
+      &timer_upload_task,  /* Task handle. */
+      0); /* Core where the task should run */
+
+  Serial.println(ret == pdPASS ? "pdPASS" : "	errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY");
+
+  ret = xTaskCreatePinnedToCore(
+      update_timer, /* Function to implement the task */
+      "timer_send_data", /* Name of the task */
+      10000,  /* Stack size in words */
+      NULL,  /* Task input parameter */
+      1,  /* Priority of the task */
+      &timer_update_task,  /* Task handle. */
+      1); /* Core where the task should run */
+
+  Serial.println(ret == pdPASS ? "pdPASS" : "	errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY");
+
+  // Configure Hall effect sensor pin
+  pinMode(HALL, INPUT_PULLUP);  // Use internal pull-up resistor
+  attachInterrupt(digitalPinToInterrupt(HALL), onHallEffect, FALLING);  // Trigger on falling edge
 }
 
 void displayY8(unsigned char * frame, int xres, int yres)
@@ -164,7 +245,7 @@ void displayY8(unsigned char * frame, int xres, int yres)
       unsigned short g = c >> 2;
       unsigned short b = c >> 3;
       tft.pushColor(r << 11 | g << 5 | b);
-    }  
+    }
 }
 
 void displayRGB565(unsigned char * frame, int xres, int yres)
@@ -179,48 +260,21 @@ void displayRGB565(unsigned char * frame, int xres, int yres)
     }
 }
 
-void drawCursor(int speed) {
-  static int lastX = CENTER_X;
-  static int lastY = CENTER_Y;
-
-  // Erase the previous cursor
-  tft.drawLine(CENTER_X, CENTER_Y, lastX, lastY, ST7735_BLACK);
-
-  // Calculate the new cursor position
-  float angle = map(speed, 0, 100, -180, 180);
-  float radian = angle * DEG_TO_RAD;
-  int x = CENTER_X + cos(radian) * (RADIUS - 20);
-  int y = CENTER_Y + sin(radian) * (RADIUS - 20);
-
-  // Draw the new cursor
-  tft.drawLine(CENTER_X, CENTER_Y, x, y, ST7735_RED);
-
-  // Update last cursor position
-  lastX = x;
-  lastY = y;
+void displayBitmap(unsigned char *frame, int xres, int yres)
+{
+  tft.fillScreen(0);
+  tft.setAddrWindow(0, 0, yres - 1, xres - 1);
+  tft.drawRGBBitmap(0, 0, (uint16_t *)frame, xres, yres);
+  // for (int x = 0; x < xres; x++)
+    // for (int y = 0; y < yres; y++) {
+    // }
 }
-
-void drawSpeed(int speed) {
-  static int lastSpeed = 0;
-
-  tft.setCursor(CENTER_X - 5, CENTER_Y + 5);
-  tft.setTextColor(ST7735_BLACK);
-  tft.print(lastSpeed);
-
-  tft.setCursor(CENTER_X - 5, CENTER_Y + 5);
-  tft.setTextColor(ST7735_WHITE);
-  tft.print(speed);
-
-  lastSpeed = speed;
-}
-
-static int counter;
 
 void loop()
 {
   // camera->oneFrame();
   // serve();
-  // displayRGB565(camera->frame, camera->xres, camera->yres);
+  // displayBitmap(camera->frame, camera->xres, camera->yres);
 
   // tft.fillScreen(0);
   // tft.drawCircle(tft.width() / 2, tft.height() / 2, 40, 0x001F);
@@ -228,9 +282,20 @@ void loop()
   // tft.setCursor(tft.width() / 2, tft.height() / 2);
   // tft.println(counter++);
   // tft.setCursor(tft.width() / 2, tft.height() / 2 + 10);
-  // tft.println("km/h");
-  drawCursor(counter++);
-  drawSpeed(counter);
+  // tft.println("km/h");  
   // sleep(1);
-  usleep(500 * 1000);
+  static uint16_t max = 0;
+  static uint16_t min = UINT16_MAX;
+  uint16_t speed = analogRead(HALL);
+  if (speed > max) max = speed;
+  if (speed < min) min = speed;
+
+  Serial.print(speed);
+  Serial.printf(", min: %hu, max: %hu, signal: %d\n", min, max, digitalRead(HALL));
+
+  Serial.print("Wheel speed: ");
+  Serial.print(wheelSpeed);
+  Serial.println(" m/s");
+
+  usleep(1000 * 1000);
 }
