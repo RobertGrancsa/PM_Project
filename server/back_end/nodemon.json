@@ -1,0 +1,12 @@
+{
+    "watch": [
+        "src"
+    ],
+    "ext": "mjs",
+    "ignore": [
+        "*.test.js"
+    ],
+    "execMap": {
+        "mjs": "node"
+    }
+}

@@ -1,4 +1,5 @@
 #pragma once
+#include <Arduino.h>
 
 // Screen dimensions
 #define SCREEN_WIDTH  160
@@ -13,4 +14,4 @@
 void drawSpeedometer();
 void drawCursor(int speed);
 void drawSpeed(int speed);
-void updateTimerScreen(float speed);
+void updateTimerScreen(float speed, float distance);

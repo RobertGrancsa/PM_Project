@@ -57,11 +57,41 @@ void drawSpeed(int speed) {
   lastSpeed = speed;
 }
 
+void drawDistance(float distance) {
+  static int lastDistance = 0;
+
+  tft.setCursor(5, SCREEN_HEIGHT - 10);
+  tft.setTextColor(ST7735_BLACK);
+  tft.print(lastDistance);
+
+  tft.setCursor(5, SCREEN_HEIGHT - 10);
+  tft.setTextColor(ST7735_WHITE);
+  tft.print(distance);
+
+  lastDistance = distance;
+}
+
+void drawTime(float distance) {
+  static float lastTime = millis() / 1000;
+
+  tft.setCursor(SCREEN_WIDTH - 10, SCREEN_HEIGHT - 10);
+  tft.setTextColor(ST7735_BLACK);
+  tft.print(lastTime);
+
+  float newTime = millis() / 1000;
+  tft.setCursor(SCREEN_WIDTH - 10, SCREEN_HEIGHT);
+  tft.setTextColor(ST7735_WHITE);
+  tft.print(newTime);
+
+  lastTime = newTime;
+}
+
 int counter;
 
-void updateTimerScreen(float speed) {
+void updateTimerScreen(float speed, float distance) {
   Serial.print("Updating on core ");
   Serial.println(xPortGetCoreID());
   drawCursor(speed * 3.6f);
   drawSpeed(speed * 3.6f);
+  drawDistance(distance);
 }
