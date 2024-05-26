@@ -19,8 +19,8 @@
 
 #include <TinyGPS++.h>
 
-const char* ssid = "GRTenda-24";
-const char* password = "robi2002";
+const char* ssid = "Phone_1_4036";
+const char* password = "eunuamparola";
 
 const int TFT_DC = 2;
 const int TFT_CS = 5;
