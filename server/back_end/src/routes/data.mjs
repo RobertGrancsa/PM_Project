@@ -4,17 +4,15 @@ import { ObjectId } from "mongodb";
 
 const router = express.Router();
 
-// Get a list of 50 posts
 router.get("/speed", async (req, res) => {
   let collection = await db.collection("data");
   let results = await collection.find({})
-    .limit(50)
+    .limit(100)
     .toArray();
 
   res.send(results).status(200);
 });
 
-// Get a list of 50 posts
 router.get("/camera", async (req, res) => {
   let collection = await db.collection("data");
   let results = await collection.find({})
