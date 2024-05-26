@@ -1,25 +1,8 @@
-import {
-  Bell,
-  CircleUser,
-  Home,
-  LineChart,
-  Menu,
-  Package,
-  Package2,
-  Search,
-  ShoppingCart,
-  Users,
-} from "lucide-react"
+import {Bell, CircleUser, Home, Menu, Package, Package2, Search, ShoppingCart, Users,} from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import {Badge} from "@/components/ui/badge"
+import {Button} from "@/components/ui/button"
+import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/components/ui/card"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,13 +11,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import {Input} from "@/components/ui/input"
+import {Sheet, SheetContent, SheetTrigger} from "@/components/ui/sheet"
 import {Link} from "react-router-dom";
 import {ModeToggle} from "@/components/mode-toggle.tsx";
-import DisplayCard from "@/components/display-card.tsx";
+import {DrawerCard, SpeedData} from "@/components/drawer-card.tsx";
+import {CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import * as React from "react";
+import {useEffect, useState} from "react";
+import axios, {AxiosResponse} from "axios";
 
 export function Dashboard() {
+  const [data, setData] = useState<SpeedData[] | undefined>(undefined);
+  
+  useEffect(() => {
+    axios.get("http://localhost:3001/api/speed").then((res: AxiosResponse<SpeedData[]>) => {
+      setData(res.data);
+    });
+  }, []);
+  
+  // const data_speed = useMemo(() => data && data.map((item) => item.speed), [data])
+  
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 md:block">
@@ -194,7 +191,7 @@ export function Dashboard() {
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
-                  placeholder="Search products..."
+                  placeholder="Search data..."
                   className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
                 />
               </div>
@@ -220,23 +217,46 @@ export function Dashboard() {
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
           <div className="flex items-center">
-            <h1 className="text-lg font-semibold md:text-2xl">Inventory</h1>
+            <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
           </div>
-          <DisplayCard/>
-          
-          <div
-            className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm" x-chunk="dashboard-02-chunk-1"
-          >
-            <div className="flex flex-col items-center gap-1 text-center">
-              <h3 className="text-2xl font-bold tracking-tight">
-                You have no products
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                You can start selling as soon as you add a product.
-              </p>
-              <Button className="mt-4">Add Product</Button>
-            </div>
+          <div className="grid grid-cols-4 gap-2">
+            <DrawerCard/>
+            
+            <Card className="p-4">
+              <ResponsiveContainer width="100%" height="100%">
+              
+              <LineChart data={data}>
+                <YAxis />
+                <Tooltip />
+                <Line
+                  dataKey="speed"
+                  dot={<></>}
+                  type="natural"
+                  stroke="hsl(var(--foreground))"
+                  style={
+                    {
+                      // fill: "hsl(var(--foreground))",
+                      opacity: 0.9,
+                    } as React.CSSProperties
+                  }
+                />
+              </LineChart >
+              </ResponsiveContainer>
+            </Card>
           </div>
+          {/*<div*/}
+          {/*  className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm" x-chunk="dashboard-02-chunk-1"*/}
+          {/*>*/}
+          {/*  <div className="flex flex-col items-center gap-1 text-center">*/}
+          {/*    <h3 className="text-2xl font-bold tracking-tight">*/}
+          {/*      You have no products*/}
+          {/*    </h3>*/}
+          {/*    <p className="text-sm text-muted-foreground">*/}
+          {/*      You can start selling as soon as you add a product.*/}
+          {/*    </p>*/}
+          {/*    <Button className="mt-4">Add Product</Button>*/}
+          {/*  </div>*/}
+          {/*</div>*/}
         </main>
       </div>
     </div>

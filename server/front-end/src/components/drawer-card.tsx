@@ -13,6 +13,11 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
+import DisplayCard from "@/components/display-card.tsx";
+import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card.tsx";
+import {Progress} from "@/components/ui/progress.tsx";
+import {useEffect, useState} from "react";
+import axios, {AxiosResponse} from "axios";
 
 const data = [
   {
@@ -56,18 +61,47 @@ const data = [
   },
 ]
 
-export function DrawerDemo() {
-  const [goal, setGoal] = React.useState(350)
+export type SpeedData = {
+  _id: string;
+  speed: number;
+  distance_elapsed: number;
+  data: Date;
+}
+
+export function DrawerCard() {
+  const [goal, setGoal] = React.useState(20);
+  const [lastData, setLastData] = useState<SpeedData | undefined>(undefined);
+  const [data, setData] = useState<any[] | undefined>(undefined);
 
   function onClick(adjustment: number) {
     setGoal(Math.max(200, Math.min(400, goal + adjustment)))
   }
-
+  
+  useEffect(() => {
+    axios.get("http://localhost:3001/api/speed").then((res: AxiosResponse<SpeedData[]>) => {
+      setLastData(res.data.pop());
+      setData(res.data.map((item: SpeedData, i, array) => ({
+        goal: item.distance_elapsed - i > 1 ? array[i - 1].distance_elapsed : 0
+      })).slice(0, 25));
+    });
+  }, []);
+  
+  console.log(data)
   return (
     <Drawer>
-      <DrawerTrigger asChild>
-      <Dis
-        <Button variant="outline">Open Drawer</Button>
+      <DrawerTrigger asChild onClick={() => console.log("clicked")}>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Distance covered</CardDescription>
+            <CardTitle className="text-4xl">{lastData?.distance_elapsed / 1000} Km</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xs text-muted-foreground">+25% from last week</div>
+          </CardContent>
+          <CardFooter>
+            <Progress value={25} aria-label="25% increase" />
+          </CardFooter>
+        </Card>
       </DrawerTrigger>
       <DrawerContent>
         <div className="mx-auto w-full max-w-sm">
@@ -92,7 +126,7 @@ export function DrawerDemo() {
                   {goal}
                 </div>
                 <div className="text-[0.70rem] uppercase text-muted-foreground">
-                  Calories/day
+                  KM/DAY
                 </div>
               </div>
               <Button
