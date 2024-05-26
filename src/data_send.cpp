@@ -6,6 +6,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <WiFiMulti.h>
+#include <TinyGPS++.h>
 
 extern WiFiMulti wifiMulti;
 extern OV7670 *camera;

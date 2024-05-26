@@ -15,7 +15,6 @@
 #include <WiFi.h>
 #include <WiFiMulti.h>
 #include <WiFiClient.h>
-#include <Ticker.h>
 #include "BMP.h"
 
 #include <TinyGPS++.h>
@@ -118,8 +117,6 @@ void serve()
   }  
 }
 
-Ticker timer_update;
-Ticker timer_upload;
 // Timer handles
 hw_timer_t* timer1 = NULL;
 hw_timer_t* timer2 = NULL;
@@ -226,24 +223,24 @@ void setup()
   drawSpeedometer();
 
   BaseType_t ret = xTaskCreatePinnedToCore(
-      attach_timer, /* Function to implement the task */
-      "timer_send_data", /* Name of the task */
-      20000,  /* Stack size in words */
-      NULL,  /* Task input parameter */
-      1,  /* Priority of the task */
-      &timer_upload_task,  /* Task handle. */
-      0); /* Core where the task should run */
+    attach_timer, /* Function to implement the task */
+    "timer_send_data", /* Name of the task */
+    20000,  /* Stack size in words */
+    NULL,  /* Task input parameter */
+    1,  /* Priority of the task */
+    &timer_upload_task,  /* Task handle. */
+    0); /* Core where the task should run */
 
   Serial.println(ret == pdPASS ? "pdPASS" : "errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY");
 
   ret = xTaskCreatePinnedToCore(
-      update_timer, /* Function to implement the task */
-      "timer_send_data", /* Name of the task */
-      20000,  /* Stack size in words */
-      NULL,  /* Task input parameter */
-      1,  /* Priority of the task */
-      &timer_update_task,  /* Task handle. */
-      1); /* Core where the task should run */
+    update_timer, /* Function to implement the task */
+    "timer_send_data", /* Name of the task */
+    20000,  /* Stack size in words */
+    NULL,  /* Task input parameter */
+    1,  /* Priority of the task */
+    &timer_update_task,  /* Task handle. */
+    1); /* Core where the task should run */
 
   int rc = gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
   if (rc != ESP_OK) {
